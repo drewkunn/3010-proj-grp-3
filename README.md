@@ -3,7 +3,7 @@
 # Phase 3 Project - Course Information Module
 
 ## Overview
-This repository contains the Phase 3 development for the SENG3010 project. My individual contribution (20% of the assignment grade) focused on the implementation of the **Course Information** logic and the standardization of the project's data backup and directory structure.
+
 
 ## Jarmaine's Contributions
 
