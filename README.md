@@ -1,26 +1,27 @@
-# SENG3010 Team 3 - Main Project
+# Phase 3 Project Submission - Team 3
 
-# Phase 3 Project - Course Information Module
+## Project Overview
+This project is a functional ECU CS Dashboard. It utilizes a PostgreSQL backend on a dedicated DB server (`dbsrv`) and a Python-CGI frontend on a Web server (`websrv`).
 
-## Overview
+## My Contributions & Navigation Guide
 
+### 1. Database & Infrastructure (Directory: `/DB`)
+* **File: `team3_db_backup.sql`** - I performed a full system `pg_dumpall` to ensure all data is preserved.
+* **Tables Created:** I manually built the relational structures for `faculty_committees` and `recources`.
+* **Environment:** Verified connectivity between the web and database virtual machines.
 
-## Jarmaine's Contributions
+### 2. Web Development (Directory: `/webpages`)
+* **File: `faculty.html`** - I developed the main Dashboard UI.
+* **Global Navigation:** I hand-coded the blue "ECU CS Dashboard" header with links for:
+  - Faculty (`faculty.py`)
+  - Courses (`courses.py`)
+  - SCH Drilldown, FTE, Committees, and Resources (Placeholders).
+* **Object-Oriented Logic:** Implemented the Python `Course` class and methods to pull and display data dynamically from the database.
 
-### 1. Object-Oriented Python Development (courses.py)
-In accordance with the Phase 3 requirements for Object-Oriented Programming (OOP), I developed the `courses.py` script.
-* **Class Structure**: Created a `CourseDisplay` class to encapsulate the webpage logic.
-* **Methods**: Implemented methods to handle CGI form data and output the required HTML for the Course Info section.
-* **CGI Integration**: Configured the script to interact with the web server, ensuring proper Content-Type headers and HTML formatting for browser display.
+### 3. Submission Packaging
+* **File: `team3_phase3.tar`** - I organized the final directory structure and compressed the project for Canvas submission.
+* **Snapshot:** A clean system state was saved as "Phase 3 Final" in vCloud.
 
-### 2. Database Management & Security
-* **Data Persistence**: Performed a `pg_dumpall` on the PostgreSQL database to create a full backup of the current schema and data.
-* **Directory Organization**: Created a dedicated `/DB` directory at the root of the project and moved the SQL dump into it to ensure it is version-controlled and easily recoverable.
-
-### 3. Deployment & Packaging
-* **File Structure**: Organized all web-facing Python scripts and configuration files into the `/webpages` directory.
-* **Tarball Creation**: Generated the `team3_phase3.tar` submission file from the main project directory, ensuring all team contributions and configuration files were included for the professor.
-* **Validation**: Verified the integrity of the archive using the `tar -tvf` command to confirm all paths and files were correctly mapped.
-
-## VM & Environment State
-* **Snapshot**: A final snapshot of the VM (labeled "Phase 3 Final") was taken in a "Powered Off" state to meet the specific requirements for the vCloud Director environment.
+## How to Run
+1. Ensure the PostgreSQL service is running on the DB server.
+2. Open Firefox in the Web VM and navigate to `localhost/webpages/faculty.py`.
