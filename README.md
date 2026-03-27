@@ -3,7 +3,7 @@
 ## Project Overview
 This project is a functional ECU CS Dashboard. It utilizes a PostgreSQL backend on a dedicated DB server (`dbsrv`) and a Python-CGI frontend on a Web server (`websrv`).
 
-## My Contributions & Navigation Guide
+
 
 ### 1. Database & Infrastructure (Directory: `/DB`)
 * **File: `team3_db_backup.sql`** - I performed a full system `pg_dumpall` to ensure all data is preserved.
