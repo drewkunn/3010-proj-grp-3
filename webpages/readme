@@ -1,0 +1,53 @@
+Phase 3 readme
+
+## How to Run
+
+1. Start Apache:
+sudo service apache2 start
+
+2. Make sure files are in CGI:
+sudo cp webpages/.py /usr/lib/cgi-bin/
+sudo chmod +x /usr/lib/cgi-bin/.py
+
+3. Open in browser:
+http://localhost/cgi-bin/faculty.py  
+http://localhost/cgi-bin/courses.py  
+
+---
+
+## Database Setup
+
+Open PostgreSQL:
+sudo -u postgres psql
+
+Connect:
+\c dashboard
+
+Check tables:
+\dt
+
+View data:
+SELECT * FROM faculty;
+SELECT * FROM courses;
+
+---
+
+## Notes
+
+- Faculty page:
+  - Search works (top right filter)
+  - Sorted by rank (Professor → Associate → Assistant → Administrative)
+
+- Courses page:
+  - Only Course Info section is implemented (as required)
+
+- Some filters under columns are just for layout
+
+---
+
+## Final Update
+
+Repo was updated after submission to fix:
+- faculty page layout
+- rank sorting
+- UI improvements
