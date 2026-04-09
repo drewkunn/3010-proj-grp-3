@@ -33,7 +33,8 @@ def get_faculty_data(search=None):
         dbname="dashboard",
         user="webuser1",
         password="password",
-        host="localhost"
+        host="localhost",
+        port=5432
     )
 
     cur = conn.cursor()
