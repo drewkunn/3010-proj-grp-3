@@ -1,13 +1,14 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 import psycopg2
 import cgi
 import cgitb
-import sys
+import html as html_module
 
-# ENABLE DEBUGGING
+# Only enable cgitb in development — remove or guard this in production
 cgitb.enable()
 
 print("Content-Type: text/html\n")
+
 
 class Faculty:
     def __init__(self, faculty_id, name, rank, email, phone, office, research_interests, remarks):
@@ -21,21 +22,35 @@ class Faculty:
         self.remarks = remarks
 
     def to_html(self):
+        # Escape all values to prevent XSS
         return f"""
         <tr>
-            <td>{self.name}</td>
-            <td>{self.rank}</td>
-            <td>{self.email}</td>
-            <td>{self.phone}</td>
-            <td>{self.office}</td>
-            <td>{self.research_interests}</td>
-            <td>{self.remarks}</td>
+            <td>{html_module.escape(self.name or '')}</td>
+            <td>{html_module.escape(self.rank or '')}</td>
+            <td>{html_module.escape(self.email or '')}</td>
+            <td>{html_module.escape(self.phone or '')}</td>
+            <td>{html_module.escape(self.office or '')}</td>
+            <td>{html_module.escape(self.research_interests or '')}</td>
+            <td>{html_module.escape(self.remarks or '')}</td>
         </tr>
         """
 
+
+RANK_ORDER = """
+    ORDER BY
+        CASE rank
+            WHEN 'Professor' THEN 1
+            WHEN 'Associate Professor' THEN 2
+            WHEN 'Assistant Professor' THEN 3
+            WHEN 'Administrative Assistant' THEN 4
+            ELSE 5
+        END,
+        name
+"""
+
+
 def get_faculty_data(search=None):
     try:
-        # UPDATED: Connecting to 'dashboard' as 'webuser1'
         conn = psycopg2.connect(
             dbname="dashboard",
             user="webuser1",
@@ -46,105 +61,154 @@ def get_faculty_data(search=None):
         cur = conn.cursor()
 
         if search:
-            query = """
-                SELECT id, name, rank, email, phone, office, research_intrests, remarks 
-                FROM faculty 
-                WHERE name ILIKE %s OR rank ILIKE %s OR email ILIKE %s 
-                   OR phone ILIKE %s OR office ILIKE %s OR research_intrests ILIKE %s 
+            query = f"""
+                SELECT id, name, rank, email, phone, office, research_interests, remarks
+                FROM faculty
+                WHERE name ILIKE %s OR rank ILIKE %s OR email ILIKE %s
+                   OR phone ILIKE %s OR office ILIKE %s OR research_interests ILIKE %s
                    OR remarks ILIKE %s
-                ORDER BY 
-                    CASE rank 
-                        WHEN 'Professor' THEN 1 
-                        WHEN 'Associate Professor' THEN 2 
-                        WHEN 'Assistant Professor' THEN 3 
-                        ELSE 4 END, 
-                    name;"""
-            search_param = f"%{search}%"
-            cur.execute(query, (search_param,) * 7)
+                {RANK_ORDER};
+            """
+            param = f"%{search}%"
+            cur.execute(query, (param,) * 7)
         else:
-            cur.execute("SELECT id, name, rank, email, phone, office, research_intrests, remarks FROM faculty ORDER BY id ASC;")
+            cur.execute(f"""
+                SELECT id, name, rank, email, phone, office, research_interests, remarks
+                FROM faculty
+                {RANK_ORDER};
+            """)
 
         rows = cur.fetchall()
         faculty_list = [Faculty(*row) for row in rows]
-        
+
         cur.close()
         conn.close()
         return faculty_list
+
     except Exception as e:
-        print(f"<div style='background:white; color:red; border:2px solid red; padding:10px;'>")
-        print(f"<b>Database Error:</b> {e}</div>")
+        print(f"<div style='color:red;border:2px solid red;padding:10px;'>"
+              f"<b>Database Error:</b> {html_module.escape(str(e))}</div>")
         return []
+
 
 def generate_html():
     form = cgi.FieldStorage()
-    search = form.getvalue("search")
-    faculty_list = get_faculty_data(search)
+    search = form.getvalue("search") or ""
+    safe_search = html_module.escape(search)
 
-    # NEW: Professional CSS to match the main VM screenshot
+    faculty_list = get_faculty_data(search if search else None)
+    total = len(faculty_list)
+    page_rows = faculty_list[:3]
+    shown = len(page_rows)
+
     css = """
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; }
-        .topbar { background-color: #4a90e2; color: white; padding: 10px 20px; display: flex; align-items: center; font-size: 14px; }
-        .topbar .brand { font-weight: bold; margin-right: 25px; font-size: 16px; }
-        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; margin-right: 20px; }
-        
-        .container { padding: 20px; }
-        .card { background: white; border: 1px solid #dee2e6; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        
-        .tab-btn { display: inline-block; padding: 8px 15px; border: 1px solid #dee2e6; border-bottom: none; background: #fff; font-size: 13px; border-radius: 4px 4px 0 0; margin-left: 2px; }
-        
-        .toolbar { padding: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border-bottom: 1px solid #eee; }
-        .toolbar input { padding: 5px; border: 1px solid #ccc; border-radius: 3px; }
+        body { font-family: Arial, sans-serif; margin: 0; background-color: white; color: #222; }
 
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th { background-color: #f8f9fa; color: #444; font-weight: 600; padding: 10px; text-align: left; border: 1px solid #dee2e6; font-size: 13px; }
-        td { padding: 10px; border: 1px solid #dee2e6; font-size: 13px; }
-        
-        .filter-row input { width: 90%; padding: 3px; font-size: 11px; border: 1px solid #ddd; }
-        .pagination-info { padding: 15px; font-size: 13px; color: #666; display: flex; justify-content: space-between; }
+        .topbar { background-color: #2f80d1; color: white; padding: 10px 14px; font-size: 13px; }
+        .topbar a { color: white; text-decoration: none; margin-right: 22px; }
+        .title { font-weight: bold; margin-right: 18px; }
+        .date-text { margin-right: 22px; }
+
+        .container { padding: 8px 14px 20px 14px; }
+        .section-tab {
+            display: inline-block; padding: 8px 12px;
+            border: 1px solid #d8d8d8; border-bottom: none;
+            background-color: white; font-size: 12px; margin-bottom: 10px;
+        }
+
+        .toolbar { margin-bottom: 8px; font-size: 12px; }
+        .toolbar select, .toolbar input { padding: 4px; border: 1px solid #d1d1d1; }
+        .toolbar .right { float: right; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td {
+            border-top: 1px solid #e1e1e1; border-bottom: 1px solid #e1e1e1;
+            padding: 8px 10px; text-align: left; vertical-align: top;
+        }
+        th { background-color: #fafafa; font-weight: bold; }
+
+        .filter-row td { background-color: white; padding: 6px 8px; }
+        .filter-row input, .filter-row select {
+            width: 95%; box-sizing: border-box; padding: 6px;
+            border: 1px solid #d6d6d6; background-color: white;
+        }
+
+        .bottom-controls {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 8px; font-size: 12px; color: #444;
+        }
+        .pagination span {
+            display: inline-block; padding: 6px 10px;
+            border: 1px solid #d0d0d0; margin-left: 4px; background: white;
+        }
+        .pagination .active { background: #f0f0f0; }
     </style>
     """
 
-    html_content = f"""
+    rows_html = "".join(f.to_html() for f in page_rows)
+
+    return f"""
     <html>
-    <head>
-        <title>ECU CS Dashboard - Faculty</title>
-        {css}
-    </head>
+    <head><title>ECU CS Dashboard - Faculty</title>{css}</head>
     <body>
-        <div class="topbar">
-            <span class="brand">ECU CS Dashboard</span>
-            <span style="color:rgba(255,255,255,0.5); margin-right:20px;">29 March 2021</span>
-            <a href="#">Faculty</a> <a href="#">Courses</a> <a href="#">Resources</a>
+
+    <div class="topbar">
+        <span class="title">ECU CS Dashboard</span>
+        <span class="date-text">29 March 2021</span>
+        <a href="/cgi-bin/faculty.py">Faculty</a>
+        <a href="/cgi-bin/courses.py">Courses</a>
+        <a href="#">SCH Drilldown</a>
+        <a href="#">FTE</a>
+        <a href="#">Faculty Committees</a>
+        <a href="#">Resources</a>
+    </div>
+
+    <div class="container">
+        <div class="section-tab">Faculty</div>
+
+        <div class="toolbar">
+            Show <select><option>3</option></select> entries
+            <span class="right">
+                <form method="GET" style="display:inline;">
+                    Filter <input type="text" name="search" value="{safe_search}">
+                </form>
+            </span>
         </div>
-        <div class="container">
-            <div class="tab-btn">Faculty</div>
-            <div class="card">
-                <div class="toolbar">
-                    <div>Show <select><option>3</option></select> entries</div>
-                    <form method="get" style="margin:0;">
-                        Filter: <input type="text" name="search" value="{search if search else ''}">
-                    </form>
-                </div>
-                <table>
-                    <tr>
-                        <th>Name</th><th>Rank</th><th>Email</th><th>Phone</th><th>Office</th><th>Interests</th><th>Remarks</th>
-                    </tr>
-                    <tr class="filter-row">
-                        <td><input type="text"></td><td><input type="text"></td><td><input type="text"></td>
-                        <td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td>
-                    </tr>
-                    {"".join([f.to_html() for f in faculty_list])}
-                </table>
-                <div class="pagination-info">
-                    <div>Showing 1 to {len(faculty_list)} of {len(faculty_list)} entries</div>
-                </div>
+
+        <table>
+            <tr>
+                <th>Name</th><th>Rank</th><th>Email</th><th>Phone</th>
+                <th>Office</th><th>Research Interests</th><th>Remarks</th>
+            </tr>
+            <tr class="filter-row">
+                <td><input type="text"></td>
+                <td><input type="text"></td>
+                <td><select><option>All</option></select></td>
+                <td><input type="text"></td>
+                <td><input type="text"></td>
+                <td><select><option>All</option></select></td>
+                <td><input type="text"></td>
+            </tr>
+            {rows_html}
+        </table>
+
+        <div class="bottom-controls">
+            <div>Showing 1 to {shown} of {total} entries</div>
+            <div class="pagination">
+                <span>Previous</span>
+                <span class="active">1</span>
+                <span>2</span>
+                <span>3</span>
+                <span>Next</span>
             </div>
         </div>
+    </div>
+
     </body>
     </html>
     """
-    return html_content
+
 
 if __name__ == "__main__":
     print(generate_html())
