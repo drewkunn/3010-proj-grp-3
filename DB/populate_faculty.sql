@@ -1,11 +1,14 @@
--- Clean out the old test data first
+-- Connect to the main database
+\c facultdb
+
+-- Wipe any existing rows to start fresh
 TRUNCATE TABLE public.faculty RESTART IDENTITY;
 
--- Insert 105 Faculty Members using a loop
+-- Insert 105 Faculty Members to meet the "100+" requirement
 DO $$
 BEGIN
     FOR i IN 1..105 LOOP
-        INSERT INTO public.faculty (name, rank, email, phone, office)
+        INSERT INTO public.faculty (name, rank, email, phone, office, research_intrests, remarks)
         VALUES (
             'Faculty Member ' || i, 
             CASE 
@@ -15,7 +18,9 @@ BEGIN
             END,
             'faculty' || i || '@ecu.edu',
             '252-328-' || LPAD(i::text, 4, '0'),
-            'Science Bldg ' || (100 + i)
+            'Science Bldg ' || (100 + i),
+            'Advanced Research Topic #' || i,
+            'Verified Phase 4B Data'
         );
     END LOOP;
 END $$;
