@@ -1,5 +1,5 @@
 -- Connect to the main database
-\c facultdb
+\c dashboard
 
 -- Wipe any existing rows to start fresh
 TRUNCATE TABLE public.faculty RESTART IDENTITY;
