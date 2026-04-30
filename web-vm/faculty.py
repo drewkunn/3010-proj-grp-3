@@ -4,7 +4,7 @@ import cgi
 import cgitb
 import sys
 
-# ENABLE DEBUGGING: This makes the browser show the specific Python error
+# ENABLE DEBUGGING
 cgitb.enable()
 
 print("Content-Type: text/html\n")
@@ -21,7 +21,6 @@ class Faculty:
         self.remarks = remarks
 
     def to_html(self):
-        # Matches your exact <tr> structure from the screenshots
         return f"""
         <tr>
             <td>{self.name}</td>
@@ -36,17 +35,17 @@ class Faculty:
 
 def get_faculty_data(search=None):
     try:
-        # FIXED: Connecting to 'facultdb' on localhost (Docker port mapping)
+        # UPDATED: Connecting to 'dashboard' as 'webuser1'
         conn = psycopg2.connect(
-            dbname="facultdb",
-            user="postgres",
+            dbname="dashboard",
+            user="webuser1",
+            password="password",
             host="localhost",
             port=5432
         )
         cur = conn.cursor()
 
         if search:
-            # Full search logic across all columns as seen in your code
             query = """
                 SELECT id, name, rank, email, phone, office, research_intrests, remarks 
                 FROM faculty 
@@ -72,7 +71,6 @@ def get_faculty_data(search=None):
         conn.close()
         return faculty_list
     except Exception as e:
-        # Ultimate Debugging: Prints the DB error inside a clean box on the web page
         print(f"<div style='background:white; color:red; border:2px solid red; padding:10px;'>")
         print(f"<b>Database Error:</b> {e}</div>")
         return []
@@ -82,23 +80,28 @@ def generate_html():
     search = form.getvalue("search")
     faculty_list = get_faculty_data(search)
 
-    # Rebuilding your CSS exactly from the screenshots
+    # NEW: Professional CSS to match the main VM screenshot
     css = """
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background-color: white; color: #222; }
-        .topbar { background-color: #2f80d1; color: white; padding: 10px 14px; font-size: 13px; }
-        .topbar a { color: white; text-decoration: none; margin-right: 22px; }
-        .title { font-weight: bold; margin-right: 18px; }
-        .container { padding: 8px 14px 20px 14px; }
-        .section-tab { 
-            display: inline-block; padding: 8px 12px; border: 1px solid #d8d8d8; 
-            border-bottom: none; background-color: white; font-size: 12px; margin-bottom: 10px; 
-        }
-        .toolbar { margin-bottom: 8px; font-size: 12px; }
-        .toolbar select, .toolbar input { padding: 4px; border: 1px solid #d1d1d1; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { text-align: left; background-color: #f2f2f2; border: 1px solid #ccc; padding: 6px; }
-        td { border: 1px solid #ccc; padding: 6px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; }
+        .topbar { background-color: #4a90e2; color: white; padding: 10px 20px; display: flex; align-items: center; font-size: 14px; }
+        .topbar .brand { font-weight: bold; margin-right: 25px; font-size: 16px; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; margin-right: 20px; }
+        
+        .container { padding: 20px; }
+        .card { background: white; border: 1px solid #dee2e6; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        .tab-btn { display: inline-block; padding: 8px 15px; border: 1px solid #dee2e6; border-bottom: none; background: #fff; font-size: 13px; border-radius: 4px 4px 0 0; margin-left: 2px; }
+        
+        .toolbar { padding: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border-bottom: 1px solid #eee; }
+        .toolbar input { padding: 5px; border: 1px solid #ccc; border-radius: 3px; }
+
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background-color: #f8f9fa; color: #444; font-weight: 600; padding: 10px; text-align: left; border: 1px solid #dee2e6; font-size: 13px; }
+        td { padding: 10px; border: 1px solid #dee2e6; font-size: 13px; }
+        
+        .filter-row input { width: 90%; padding: 3px; font-size: 11px; border: 1px solid #ddd; }
+        .pagination-info { padding: 15px; font-size: 13px; color: #666; display: flex; justify-content: space-between; }
     </style>
     """
 
@@ -110,26 +113,33 @@ def generate_html():
     </head>
     <body>
         <div class="topbar">
-            <span class="title">ECU CS Dashboard</span>
-            <a href="#">Faculty</a>
-            <a href="#">Courses</a>
-            <a href="#">Resources</a>
+            <span class="brand">ECU CS Dashboard</span>
+            <span style="color:rgba(255,255,255,0.5); margin-right:20px;">29 March 2021</span>
+            <a href="#">Faculty</a> <a href="#">Courses</a> <a href="#">Resources</a>
         </div>
         <div class="container">
-            <div class="section-tab">Faculty List</div>
-            <div class="toolbar">
-                <form method="get">
-                    <input type="text" name="search" placeholder="Search faculty..." value="{search if search else ''}">
-                    <input type="submit" value="Search">
-                    <span style="margin-left:20px;">Showing {len(faculty_list)} Faculty Members</span>
-                </form>
+            <div class="tab-btn">Faculty</div>
+            <div class="card">
+                <div class="toolbar">
+                    <div>Show <select><option>3</option></select> entries</div>
+                    <form method="get" style="margin:0;">
+                        Filter: <input type="text" name="search" value="{search if search else ''}">
+                    </form>
+                </div>
+                <table>
+                    <tr>
+                        <th>Name</th><th>Rank</th><th>Email</th><th>Phone</th><th>Office</th><th>Interests</th><th>Remarks</th>
+                    </tr>
+                    <tr class="filter-row">
+                        <td><input type="text"></td><td><input type="text"></td><td><input type="text"></td>
+                        <td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td>
+                    </tr>
+                    {"".join([f.to_html() for f in faculty_list])}
+                </table>
+                <div class="pagination-info">
+                    <div>Showing 1 to {len(faculty_list)} of {len(faculty_list)} entries</div>
+                </div>
             </div>
-            <table>
-                <tr>
-                    <th>Name</th><th>Rank</th><th>Email</th><th>Phone</th><th>Office</th><th>Interests</th><th>Remarks</th>
-                </tr>
-                {"".join([f.to_html() for f in faculty_list])}
-            </table>
         </div>
     </body>
     </html>
