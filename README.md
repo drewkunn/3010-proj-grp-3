@@ -1,3 +1,10 @@
+## Important Note
+# We should have erverthing working if you (revert the current snapshot) everthing should autumaticly pop up and show. We have everything in the web vm exept the fte calculations dont show in the (webvm) but they do show on our (main vm) if you want to verify.
+
+
+
+
+
 # Project Setup Instructions
 
 ## 1. Start the VM
